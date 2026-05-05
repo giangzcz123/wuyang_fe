@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Footer from "../components/Footer";
 import customerApi from "../api/customerApi";
+import { BASE_URL, request } from "../api/apiClient";
 
 // Customer sub-components
 import CartContent from "../components/customer/CartContent";
@@ -56,7 +57,7 @@ const CustomerMenu = () => {
     const loadData = async () => {
       try {
         const [catRes, rawMenuData] = await Promise.all([
-          fetch("https://wuyang.xo.je/api/fetch_categories.php").then((r) => r.json()),
+          request("/fetch_categories.php"),
           customerApi.getMenu(),
         ]);
         const allProducts = rawMenuData.flatMap((category) =>
@@ -216,10 +217,9 @@ const CustomerMenu = () => {
       setCheckoutPreview(data);
       setShowCheckoutModal(true);
       setShowMobileCart(false);
-      fetch("https://wuyang.xo.je/api/checkout_request.php", {
+      request("/checkout_request.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ table_id: tableId, token }),
+        body: { table_id: tableId, token },
       }).catch(() => { });
     } catch (e) {
       toast.error("Lỗi", e.message || "Không lấy được tạm tính.");

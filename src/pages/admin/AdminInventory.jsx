@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Trash2, PackageSearch, ChefHat, ArrowDownToLine, Search, X } from "lucide-react";
-import { request } from "../../api/apiClient";
+import { request, BASE_URL } from "../../api/apiClient";
 import { useToast } from "../../components/ui/Toast";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
 
@@ -145,7 +145,7 @@ const AdminInventory = () => {
     if (!ok) return;
     try {
       const params = new URLSearchParams({ ProductID: productId, IngredientID: ingredientId });
-      await fetch("https://wuyang.xo.je/api/admin_recipe_management.php", {
+      await fetch(`${BASE_URL}/admin_recipe_management.php`, {
         method: "DELETE",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString()

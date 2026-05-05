@@ -9,6 +9,7 @@ import {
   LogOut,
   X,
   FileText,
+  CalendarDays,
 } from "lucide-react";
 
 // Tách nhỏ SidebarItem để dễ quản lý link
@@ -84,7 +85,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           />
           <SidebarItem
             to="/cashier/bookings"
-            icon={<Users size={22} />}
+            icon={<CalendarDays size={22} />}
             label="Đặt bàn"
             isOpen={isOpen}
           />

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ArrowLeft, User, Lock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "../components/ui/Toast";
+import { request } from "../api/apiClient";
 
 const SignInPage = () => {
   const { toast } = useToast();
@@ -24,16 +25,10 @@ const SignInPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "https://wuyang.xo.je/api/login.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        },
-      );
-
-      const result = await response.json();
+      const result = await request("/login.php", {
+        method: "POST",
+        body: formData,
+      });
 
       if (result.success) {
         localStorage.setItem("user", JSON.stringify(result.user));

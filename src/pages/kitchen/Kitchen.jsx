@@ -330,8 +330,10 @@ const Kitchen = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-[#F5D7A0]">
                   {category.Products.map((product) => (
-                    <div key={product.ProductID} className={`p-4 rounded-2xl border transition-all ${
-                      product.IsAvailable == 0 ? "bg-gray-900 border-gray-800 opacity-60" : "bg-white/5 border-white/10 hover:bg-white/10"
+                    <div key={product.ProductID} className={`p-4 rounded-2xl border transition-all shadow-lg ${
+                      product.IsAvailable == 0 
+                        ? "bg-black/80 border-gray-800 opacity-80 grayscale backdrop-blur-md" 
+                        : "bg-black/60 border-white/10 hover:bg-black/80 hover:border-[#F5D7A0]/30 backdrop-blur-md"
                     }`}>
                       <div className="flex justify-between items-start gap-2 mb-3">
                         <div className="min-w-0">

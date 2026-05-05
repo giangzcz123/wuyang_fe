@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import CustomerMenu from "../pages/CustomerMenu";
 import SignInPage from "./SignInPage";
+import { request } from "../api/apiClient";
 const categoryImages = {
   All: "/all.png",
   Lẩu: "/lau.png",
@@ -31,15 +32,10 @@ const Menu = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [catRes, prodRes] = await Promise.all([
-          fetch("https://wuyang.xo.je/api/fetch_categories.php"),
-          fetch("https://wuyang.xo.je/api/menu.php"),
+        const [catData, rawMenuData] = await Promise.all([
+          request("/fetch_categories.php"),
+          request("/menu.php"),
         ]);
-
-        if (!catRes.ok || !prodRes.ok) throw new Error("Lỗi kết nối server");
-
-        const catData = await catRes.json();
-        const rawMenuData = await prodRes.json(); // Cấu trúc: [{ CategoryName: "Nướng", Products: [...] }]
 
         // --- XỬ LÝ DỮ LIỆU ĐỂ LỌC THEO TÊN ---
         // Duyệt qua từng Category, sau đó map vào danh sách sản phẩm để gắn kèm tên danh mục

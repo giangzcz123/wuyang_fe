@@ -1,209 +1,245 @@
 import React, { useState, useEffect } from "react";
+import { Search, Loader2, Phone, Calendar as CalendarIcon, CheckCircle, XCircle, Clock } from "lucide-react";
 import { request } from "../../api/apiClient";
 import { useToast } from "../../components/ui/Toast";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
-import { Check, X, Phone, Calendar as CalendarIcon, Clock, Users, Search } from "lucide-react";
 
 const BookingManagement = () => {
-    const { toast } = useToast();
-    const { confirm, ConfirmDialogComponent } = useConfirm();
-    
-    const [bookings, setBookings] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterStatus, setFilterStatus] = useState("All"); // All, Pending, Confirmed, Arrived, Cancelled
+  const { toast } = useToast();
+  const { confirm, ConfirmDialogComponent } = useConfirm();
+  
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // States cho Bộ lọc thông minh
+  const [filterStatus, setFilterStatus] = useState("All"); // All, Pending, Confirmed, Arrived, Cancelled
+  const [filterDate, setFilterDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-    useEffect(() => {
-        fetchBookings();
-    }, []);
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const queryParams = new URLSearchParams();
+      if (filterStatus !== "All") queryParams.append("status", filterStatus);
+      if (filterDate) queryParams.append("date", filterDate);
+      if (searchTerm) queryParams.append("search", searchTerm);
 
-    const fetchBookings = async () => {
-        try {
-            setLoading(true);
-            const res = await request("/admin_bookings.php");
-            setBookings(Array.isArray(res) ? res : []);
-        } catch (error) {
-            toast.error("Lỗi tải lịch đặt bàn", "Không thể kết nối máy chủ.");
-        } finally {
-            setLoading(false);
-        }
-    };
+      const data = await request(`/bookings_crud.php?${queryParams.toString()}`);
+      setBookings(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi", "Không thể tải danh sách đặt bàn.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleUpdateStatus = async (bookingId, newStatus, customerName) => {
-        let confirmMsg = "";
-        let intent = "info";
-        
-        if (newStatus === "Confirmed") {
-            confirmMsg = `Đã gọi xác nhận với khách ${customerName}?`;
-        } else if (newStatus === "Cancelled") {
-            confirmMsg = `Khách ${customerName} huỷ bàn hoặc không tới?`;
-            intent = "danger";
-        } else if (newStatus === "Arrived") {
-            confirmMsg = `Khách ${customerName} đã đến nhà hàng?`;
-        }
+  useEffect(() => {
+    // Thêm debounce cho search nếu cần thiết, ở đây gọi trực tiếp khi dependency thay đổi
+    const timer = setTimeout(() => {
+      fetchBookings();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filterStatus, filterDate, searchTerm]);
 
-        const ok = await confirm({
-            title: "Cập nhật trạng thái",
-            message: confirmMsg,
-            type: intent,
-            confirmText: "Đồng ý",
-        });
-
-        if (!ok) return;
-
-        try {
-            await request("/admin_bookings.php", {
-                method: "PUT",
-                body: { BookingID: bookingId, Status: newStatus }
-            });
-            toast.success("Đã cập nhật", `Trạng thái đặt bàn được đổi thành ${newStatus}`);
-            fetchBookings();
-        } catch (err) {
-            toast.error("Lỗi", "Không thể cập nhật trạng thái");
-        }
-    };
-
-    const filteredBookings = bookings.filter(b => {
-        const matchSearch = b.CustomerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            b.CustomerPhone.includes(searchTerm);
-        const matchFilter = filterStatus === "All" || b.Status === filterStatus;
-        return matchSearch && matchFilter;
+  // Handle Cập nhật trạng thái
+  const handleUpdateStatus = async (bookingID, newStatus, actionName) => {
+    const isConfirmed = await confirm({
+      title: "Xác nhận",
+      message: `Bạn chắc chắn muốn chuyển đơn này sang trạng thái "${actionName}"?`,
+      type: newStatus === "Cancelled" ? "danger" : "info",
+      confirmText: "Đồng ý",
     });
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "Pending": return <span className="bg-yellow-100 text-yellow-800 border-yellow-200 border px-2 py-1 rounded-full text-xs font-bold w-max">Chờ gọi xác nhận</span>;
-            case "Confirmed": return <span className="bg-blue-100 text-blue-800 border-blue-200 border px-2 py-1 rounded-full text-xs font-bold w-max">Đã xác nhận</span>;
-            case "Arrived": return <span className="bg-green-100 text-green-800 border-green-200 border px-2 py-1 rounded-full text-xs font-bold w-max">Khách đã đến</span>;
-            case "Cancelled": return <span className="bg-gray-100 text-gray-600 border-gray-200 border px-2 py-1 rounded-full text-xs font-bold w-max">Đã huỷ</span>;
-            default: return null;
-        }
-    };
+    if (!isConfirmed) return;
 
-    return (
-        <div className="space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-            {ConfirmDialogComponent}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 pb-4">
-                <div>
-                    <h2 className="text-3xl font-black text-gray-800 flex items-center gap-3">
-                        <span className="bg-orange-500 w-1.5 h-8 rounded-full"></span>
-                        Quản lý Đặt Bàn (Booking)
-                    </h2>
-                    <p className="text-gray-500 mt-1">Theo dõi và gọi xác nhận khách đặt bàn qua Website</p>
-                </div>
-            </div>
+    try {
+      const res = await request("/bookings_crud.php", {
+        method: "PUT",
+        body: { BookingID: bookingID, Status: newStatus },
+      });
 
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[70vh]">
-                <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-4 bg-gray-50/50">
-                    <div className="relative flex-1 max-w-sm">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input 
-                            type="text" 
-                            placeholder="Tìm Tên khách hoặc SĐT..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all outline-none font-medium"
-                        />
-                    </div>
+      if (res.success) {
+        toast.success("Thành công", "Đã cập nhật trạng thái đơn đặt bàn.");
+        fetchBookings(); // Reload data
+      }
+    } catch (error) {
+      toast.error("Thất bại", error.message || "Không thể cập nhật.");
+    }
+  };
 
-                    <div className="flex gap-2 bg-gray-200/50 p-1 rounded-xl w-max overflow-x-auto">
-                        {['All', 'Pending', 'Confirmed', 'Arrived', 'Cancelled'].map(status => (
-                            <button
-                                key={status}
-                                onClick={() => setFilterStatus(status)}
-                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap
-                                    ${filterStatus === status ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}
-                                `}
-                            >
-                                {status === 'All' ? 'Tất cả' : status === 'Pending' ? 'Chờ xác nhận' : status === 'Confirmed' ? 'Đã xác nhận' : status === 'Arrived' ? 'Khách đã đến' : 'Huỷ'}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "Pending":
+        return <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><Clock size={12}/> Chờ gọi KQ</span>;
+      case "Confirmed":
+        return <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle size={12}/> Đã xác nhận</span>;
+      case "Arrived":
+        return <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><CheckCircle size={12}/> Đã đến</span>;
+      case "Cancelled":
+        return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><XCircle size={12}/> Đã Hủy</span>;
+      default:
+        return <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-bold">{status}</span>;
+    }
+  };
 
-                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    {loading ? (
-                        <div className="flex justify-center py-20">
-                            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                    ) : filteredBookings.length === 0 ? (
-                        <div className="text-center py-20 text-gray-400 font-bold italic">Chưa có lịch đặt bàn nào.</div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {filteredBookings.map(b => (
-                                <div key={b.BookingID} className="bg-white border hover:border-orange-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h3 className="font-black text-gray-800 text-lg flex items-center gap-2">
-                                                {b.CustomerName}
-                                            </h3>
-                                            <a href={`tel:${b.CustomerPhone}`} className="text-blue-600 font-bold text-sm flex items-center gap-1 mt-1 hover:underline w-max">
-                                                <Phone size={14} /> {b.CustomerPhone}
-                                            </a>
-                                        </div>
-                                        {getStatusBadge(b.Status)}
-                                    </div>
+  return (
+    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 min-h-[80vh]">
+      <div className="mb-8">
+        <h1 className="text-2xl font-black tracking-tight text-[#850A0A] uppercase mb-1">
+          Quản Lý Đặt Bàn
+        </h1>
+        <p className="text-gray-500 text-sm">Kiểm soát đơn và liên hệ khách hàng dễ dàng</p>
+      </div>
 
-                                    <div className="bg-orange-50/50 rounded-xl p-3 border border-orange-100/50 space-y-2 mb-4">
-                                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                                            <CalendarIcon size={16} className="text-orange-500" />
-                                            Ngày đến: <b>{b.BookingDate}</b>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                                            <Clock size={16} className="text-orange-500" />
-                                            Giờ: <b>{b.BookingTime}</b>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                                            <Users size={16} className="text-orange-500" />
-                                            Số lượng khách: <b>{b.GuestCount} người</b>
-                                        </div>
-                                    </div>
-                                    
-                                    {b.Note && (
-                                        <div className="mb-4 text-sm text-gray-600 bg-gray-50 border border-dashed border-gray-300 p-2 rounded-lg italic">
-                                            📝 {b.Note}
-                                        </div>
-                                    )}
-
-                                    <div className="text-xs text-gray-400 mb-3 border-t border-gray-100 pt-3">
-                                        Chi nhánh: <span className="font-bold text-gray-600">{b.BranchName}</span>
-                                    </div>
-
-                                    {/* Action Buttons */}
-                                    {b.Status !== "Cancelled" && b.Status !== "Arrived" && (
-                                        <div className="flex gap-2 mt-auto">
-                                            {b.Status === "Pending" && (
-                                                <button 
-                                                    onClick={() => handleUpdateStatus(b.BookingID, "Confirmed", b.CustomerName)}
-                                                    className="flex-1 py-2 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 rounded-lg font-bold text-sm flex items-center justify-center gap-1 transition-colors"
-                                                >
-                                                    <Check size={16} /> Chốt đơn
-                                                </button>
-                                            )}
-                                            {b.Status === "Confirmed" && (
-                                                <button 
-                                                    onClick={() => handleUpdateStatus(b.BookingID, "Arrived", b.CustomerName)}
-                                                    className="flex-1 py-2 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white border border-green-200 rounded-lg font-bold text-sm flex items-center justify-center gap-1 transition-colors"
-                                                >
-                                                    <Check size={16} /> Đã tới
-                                                </button>
-                                            )}
-                                            <button 
-                                                onClick={() => handleUpdateStatus(b.BookingID, "Cancelled", b.CustomerName)}
-                                                className="flex-1 py-2 bg-gray-50 text-gray-600 hover:bg-red-500 hover:text-white hover:border-red-500 border border-gray-200 rounded-lg font-bold text-sm flex items-center justify-center gap-1 transition-colors"
-                                            >
-                                                <X size={16} /> Huỷ bàn
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+      {/* --- Bộ lọc thông minh --- */}
+      <div className="bg-[#F9F9F9] p-4 rounded-2xl flex flex-col lg:flex-row gap-4 justify-between items-center mb-6">
+        {/* Tabs Trạng Thái */}
+        <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar">
+          {["All", "Pending", "Confirmed", "Arrived", "Cancelled"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all ${
+                filterStatus === status 
+                  ? "bg-[#850A0A] text-white shadow-md" 
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              {status === "All" ? "Tất cả" : 
+               status === "Pending" ? "Chờ gọi" :
+               status === "Confirmed" ? "Đã duyệt" :
+               status === "Arrived" ? "Đã đến" : "Đã hủy"}
+            </button>
+          ))}
         </div>
-    );
+
+        {/* Date & Search */}
+        <div className="flex gap-3 w-full lg:w-auto overflow-x-auto">
+          <div className="relative min-w-[150px]">
+             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <CalendarIcon size={16} className="text-gray-400" />
+            </div>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#EE8D2D] outline-none text-sm text-gray-700"
+            />
+          </div>
+
+          <div className="relative min-w-[200px] flex-1">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <Search size={16} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Tên, SDT..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#EE8D2D] outline-none text-sm text-gray-700"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* --- Bảng dữ liệu --- */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b-2 border-gray-100 pb-2">
+              <th className="py-3 px-4 text-sm font-bold text-gray-600">Khách hàng</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-600">Thông tin Đặt</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-600">Ghi chú</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-600">Trạng thái</th>
+              <th className="py-3 px-4 text-sm font-bold text-gray-600 text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y border-t border-gray-100">
+            {loading ? (
+              <tr>
+                <td colSpan="5" className="py-12 text-center text-gray-400">
+                  <Loader2 size={32} className="animate-spin mx-auto text-[#EE8D2D]" />
+                  <p className="mt-2 text-sm italic">Đang tải dữ liệu...</p>
+                </td>
+              </tr>
+            ) : bookings.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="py-12 text-center text-gray-400 text-sm italic">
+                  Không tìm thấy đơn đặt bàn nào theo bộ lọc này.
+                </td>
+              </tr>
+            ) : (
+              bookings.map((booking) => (
+                <tr key={booking.BookingID} className="hover:bg-gray-50/50 transition-colors">
+                  {/* Cột 1: Thông tin khách */}
+                  <td className="py-4 px-4 align-top">
+                    <p className="font-bold text-gray-900">{booking.CustomerName}</p>
+                    <a 
+                      href={`tel:${booking.CustomerPhone}`}
+                      className="inline-flex items-center gap-1.5 mt-1 text-[#EE8D2D] hover:text-[#d67d26] font-medium text-sm transition-colors py-1 px-2 -ml-2 rounded-lg hover:bg-orange-50"
+                    >
+                      <Phone size={14} /> {booking.CustomerPhone}
+                    </a>
+                  </td>
+
+                  {/* Cột 2: Lịch */}
+                  <td className="py-4 px-4 align-top">
+                    <p className="font-bold text-[#850A0A]">{booking.BookingDate} <span className="opacity-50">|</span> {booking.BookingTime}</p>
+                    <p className="text-gray-500 text-xs mt-1 leading-relaxed">Nhánh: {booking.BranchName}</p>
+                    <p className="text-gray-600 text-sm mt-0.5 font-medium">{booking.GuestCount} Người</p>
+                  </td>
+
+                  {/* Cột 3: Note */}
+                  <td className="py-4 px-4 align-top">
+                    <p className="text-sm text-gray-600 line-clamp-3 w-[200px]">
+                      {booking.Note || <span className="italic opacity-40">Không có ghi chú</span>}
+                    </p>
+                  </td>
+
+                  {/* Cột 4: Status */}
+                  <td className="py-4 px-4 align-top">
+                    {getStatusBadge(booking.Status)}
+                  </td>
+
+                  {/* Cột 5: Actions */}
+                  <td className="py-4 px-4 align-top text-center">
+                    <div className="flex flex-col gap-2 min-w-[120px]">
+                      {booking.Status === "Pending" && (
+                        <button
+                          onClick={() => handleUpdateStatus(booking.BookingID, "Confirmed", "Xác nhận")}
+                          className="px-3 py-2 bg-[#850A0A] hover:bg-[#9F1514] text-white text-xs font-bold rounded-lg shadow-sm transition-all"
+                        >
+                          Xác nhận Đơn
+                        </button>
+                      )}
+                      {booking.Status === "Confirmed" && (
+                        <button
+                          onClick={() => handleUpdateStatus(booking.BookingID, "Arrived", "Khách đã đến")}
+                          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
+                        >
+                          Khách Đã Đến
+                        </button>
+                      )}
+                      {(booking.Status === "Pending" || booking.Status === "Confirmed") && (
+                        <button
+                          onClick={() => handleUpdateStatus(booking.BookingID, "Cancelled", "Hủy bàn")}
+                          className="px-3 py-2 bg-white text-red-600 border border-red-200 hover:bg-red-50 text-xs font-bold rounded-lg transition-all"
+                        >
+                          Hủy Bàn
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      {ConfirmDialogComponent}
+    </div>
+  );
 };
 
 export default BookingManagement;

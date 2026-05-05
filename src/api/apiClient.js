@@ -1,14 +1,21 @@
-const BASE_URL = "https://wuyang.xo.je/api";
+export const BASE_URL = "http://localhost:8088/hadilaoPHP/api";
 
 export const request = async (endpoint, options = {}) => {
-  const { body, ...customConfig } = options;
+  const { body, headers, ...customConfig } = options;
   const config = {
     method: body ? "POST" : "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      ...(body ? { "Content-Type": "application/json" } : {}),
+      ...headers 
+    },
     ...customConfig,
   };
 
-  if (body) config.body = JSON.stringify(body);
+  if (body && config.headers["Content-Type"] === "application/json") {
+    config.body = JSON.stringify(body);
+  } else if (body) {
+    config.body = body;
+  }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, config);
 

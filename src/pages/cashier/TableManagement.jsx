@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../components/ui/Toast";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
+import { request } from "../../api/apiClient";
 
 const TableManagement = () => {
   const { toast } = useToast();
@@ -27,10 +28,7 @@ const TableManagement = () => {
   // 1. Lấy sơ đồ bàn từ API khi component mount
   const fetchTables = async () => {
     try {
-      const response = await fetch(
-        "https://wuyang.xo.je/api/tables_map.php",
-      );
-      const data = await response.json();
+      const data = await request("/tables_map.php");
       setTables(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Lỗi lấy dữ liệu bàn:", error);
@@ -49,13 +47,9 @@ const TableManagement = () => {
   const handleOpenTable = async (tableId, tableLabel) => {
     try {
       setProcessingTableId(tableId);
-      const response = await fetch(
-        `https://wuyang.xo.je/api/tables_open.php?id=${tableId}`,
-        {
-          method: "POST",
-        },
-      );
-      const data = await response.json();
+      const data = await request(`/tables_open.php?id=${tableId}`, {
+        method: "POST",
+      });
       if (data.success) {
         setQrModal({
           open: true,
@@ -89,11 +83,7 @@ const TableManagement = () => {
 
     try {
       setProcessingTableId(tableId);
-      const response = await fetch(
-        `https://wuyang.xo.je/api/tables_checkout.php?id=${tableId}`,
-        { method: "GET" },
-      );
-      const data = await response.json();
+      const data = await request(`/tables_checkout.php?id=${tableId}`);
       if (data.success) {
         toast.success("Thành công", `Bàn ${tableLabel} đã thanh toán xong.`);
         fetchTables();
@@ -112,11 +102,7 @@ const TableManagement = () => {
   const handleCleanDone = async (tableId, tableLabel) => {
     try {
       setProcessingTableId(tableId);
-      const response = await fetch(
-        `https://wuyang.xo.je/api/tables_update_status.php?id=${tableId}&status=0`,
-        { method: "GET" },
-      );
-      const data = await response.json();
+      const data = await request(`/tables_update_status.php?id=${tableId}&status=0`);
       if (data.success) {
         toast.info("Đã dọn xong", `Bàn ${tableLabel} hiện đã trống.`);
         fetchTables();

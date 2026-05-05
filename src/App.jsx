@@ -17,12 +17,11 @@ import TableManagement from "./pages/cashier/TableManagement";
 import Dashboard from "./pages/cashier/Dashboard";
 import HomeCashier from "./pages/cashier/HomeCashier";
 import BillManagement from "./pages/cashier/BillManagement";
+import BookingManagement from "./pages/cashier/BookingManagement";
 import CustomerMenu from "./pages/CustomerMenu";
 import Kitchen from "./pages/kitchen/Kitchen";
 import News from "./pages/News";
 import About from "./pages/About";
-
-import BookingManagement from "./pages/cashier/BookingManagement";
 
 // Admin Imports
 import Admin from "./pages/admin/Admin";
@@ -49,12 +48,14 @@ function App() {
           <Route path="/news" element={<News />} />
           <Route path="/about" element={<About />} />
 
+
           <Route element={<ProtectedRoute allowedRoles={["Cashier"]} />}>
             <Route path="/cashier" element={<Dashboard />}>
               <Route index element={<HomeCashier />} />
               <Route path="tables" element={<TableManagement />} />
               <Route path="bills" element={<BillManagement />} />
               <Route path="bookings" element={<BookingManagement />} />
+              <Route path="staff" element={<div>Trang nhân viên</div>} />
             </Route>
           </Route>
 

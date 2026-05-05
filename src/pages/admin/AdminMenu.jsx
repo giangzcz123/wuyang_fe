@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Edit2, Trash2, Search, X, Image as ImageIcon, Upload, Loader2 } from "lucide-react";
-import { request } from "../../api/apiClient";
+import { request, BASE_URL } from "../../api/apiClient";
 import { formatPrice } from "../../utils/format";
 import { ToastContainer, useToast } from "../../components/ui/Toast";
 import { useConfirm } from "../../components/ui/ConfirmDialog";
@@ -92,7 +92,7 @@ const AdminMenu = () => {
 
     try {
       // Use the absolute URL for the PHP upload script
-      const response = await fetch("https://wuyang.xo.je/api/upload_image.php", {
+      const response = await fetch(`${BASE_URL}/upload_image.php`, {
         method: "POST",
         body: formDataUpload,
       });
@@ -130,7 +130,7 @@ const AdminMenu = () => {
           IsAvailable: formData.IsAvailable
         });
         
-        await fetch("https://wuyang.xo.je/api/admin_menu_crud.php", {
+        await fetch(`${BASE_URL}/admin_menu_crud.php`, {
           method: "PUT",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: params.toString()
@@ -168,7 +168,7 @@ const AdminMenu = () => {
     
     try {
       const params = new URLSearchParams({ ProductID: productId });
-      await fetch("https://wuyang.xo.je/api/admin_menu_crud.php", {
+      await fetch(`${BASE_URL}/admin_menu_crud.php`, {
         method: "DELETE",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString()

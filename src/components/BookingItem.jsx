@@ -1,6 +1,6 @@
 import React from "react";
 
-const BookingItem = ({ name, address, openTime, phone, onBook }) => {
+const BookingItem = ({ name, address, openTime, phone, onBookClick }) => {
   return (
     <div className="py-6 border-b border-gray-100 last:border-none flex flex-col md:flex-row md:items-start md:justify-between gap-6">
       {/* 1. Phần thông tin: Chiếm hết chiều rộng trên Mobile, tự dãn trên Desktop */}
@@ -35,7 +35,7 @@ const BookingItem = ({ name, address, openTime, phone, onBook }) => {
 
         {/* Nút Đặt bàn */}
         <button 
-          onClick={() => onBook(name)}
+          onClick={() => onBookClick(name)}
           className="flex-1 w-full h-full py-3 md:py-2.5 bg-[#EE8D2D] text-white font-bold rounded-lg shadow-md hover:bg-[#d67d26] transition-all active:scale-95 cursor-pointer"
         >
           Đặt bàn
