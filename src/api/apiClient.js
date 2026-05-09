@@ -4,8 +4,8 @@
 // 👇 Khi chạy qua Wi-Fi LAN (cùng phòng thi)
 // export const BASE_URL = "http://192.168.1.9/wuyang_be/api";
 
-// 👇 Backend đã deploy lên InfinityFree (dùng khi demo thật)
-export const BASE_URL = "https://wuyangbe.lovestoblog.com/wuyang_be/api";
+// ✅ ĐANG DÙNG: Vercel Proxy → InfinityFree (không bị CORS vì cùng origin)
+export const BASE_URL = "/backend";
 
 export const request = async (endpoint, options = {}) => {
   const { body, headers, ...customConfig } = options;
