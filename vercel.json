@@ -2,10 +2,10 @@
   "rewrites": [
     {
       "source": "/backend/:path*",
-      "destination": "https://wuyangbe.lovestoblog.com/wuyang_be/api/:path*"
+      "destination": "/api/proxy/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
