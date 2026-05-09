@@ -1,4 +1,11 @@
-export const BASE_URL = "http://localhost:8088/hadilaoPHP/api";
+// 👇 Khi chạy bình thường trên máy tính (chỉ mình anh xem)
+// export const BASE_URL = "http://localhost/wuyang_be/api";
+
+// 👇 Khi chạy qua Wi-Fi LAN (cùng phòng thi)
+// export const BASE_URL = "http://192.168.1.9/wuyang_be/api";
+
+// 👇 Backend đã deploy lên InfinityFree (dùng khi demo thật)
+export const BASE_URL = "https://wuyangbe.lovestoblog.com/api";
 
 export const request = async (endpoint, options = {}) => {
   const { body, headers, ...customConfig } = options;

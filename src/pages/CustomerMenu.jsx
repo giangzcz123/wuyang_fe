@@ -77,7 +77,7 @@ const CustomerMenu = () => {
     };
     loadData();
 
-    // Tự động cập nhật menu (bao gồm trạng thái Hết món) mỗi 30 giây
+    // Tự động cập nhật menu (bao gồm trạng thái Hết món) mỗi 10 giây
     const menuInterval = setInterval(loadData, 10000);
     return () => clearInterval(menuInterval);
   }, [tableId, token, tableNumber]);
